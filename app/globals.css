@@ -1,34 +1,66 @@
 @import "tailwindcss";
 
+/* Paleta: cambiar aquí cambia todo el juego. */
 @theme {
-  --color-crema: #fbf6ee;
-  --color-crema-oscuro: #f3eadb;
-  --color-tinta: #2b2622;
-  --color-tinta-suave: #6f655c;
-  --color-borde: #e4d9c8;
-  --color-rojo: #c0392b;
-  --color-verde: #2e8b57;
-  --color-amarillo: #f2c14e;
+  --color-fondo: #eef2f7;
+  --color-superficie: #ffffff;
+  --color-cabecera: #f6f8fb;
+  --color-tinta: #0f172a;
+  --color-tinta-suave: #64748b;
+  --color-borde: #dde3ec;
+  --color-primario: #4f46e5;
+  --color-primario-oscuro: #3730a3;
+  --color-primario-suave: #eef0ff;
+  --color-alto: #e11d48;
+  --color-verde: #059669;
+  --color-amarillo: #f59e0b;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--color-crema);
+  background: var(--color-fondo);
   color: var(--color-tinta);
 }
 
 @layer components {
   .tarjeta {
-    @apply rounded-2xl border border-borde bg-white p-5 shadow-sm;
+    @apply rounded-2xl border border-borde bg-superficie p-5 shadow-sm;
   }
   .campo {
-    @apply rounded-xl border-2 border-borde bg-white px-3 py-2.5 text-base outline-none transition focus:border-tinta;
+    @apply rounded-lg border border-borde bg-superficie px-3 py-2.5 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-primario/20;
   }
   .boton-principal {
-    @apply inline-flex items-center justify-center rounded-xl bg-rojo px-5 py-3 font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none;
+    @apply inline-flex items-center justify-center rounded-xl bg-primario px-5 py-3 font-bold text-white shadow-sm transition hover:bg-primario-oscuro active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40;
   }
   .boton-secundario {
-    @apply inline-flex items-center justify-center rounded-xl border-2 border-tinta bg-white px-5 py-3 font-bold text-tinta transition hover:bg-crema-oscuro active:scale-[0.98] disabled:opacity-40;
+    @apply inline-flex items-center justify-center rounded-xl border border-borde bg-superficie px-5 py-3 font-bold text-tinta transition hover:bg-cabecera active:scale-[0.98] disabled:opacity-40;
+  }
+  .boton-alto {
+    @apply inline-flex items-center justify-center rounded-xl bg-alto px-5 py-3 font-black text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none;
+  }
+
+  /* Tablas tipo hoja de cálculo */
+  .hoja {
+    @apply overflow-x-auto rounded-2xl border border-borde bg-superficie shadow-sm;
+  }
+  .hoja table {
+    @apply w-full border-collapse text-sm;
+  }
+  .hoja th {
+    @apply border-b border-borde bg-cabecera px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide whitespace-nowrap text-tinta-suave;
+  }
+  .hoja td {
+    @apply border-b border-borde px-3 py-2 align-top;
+  }
+  .hoja td + td,
+  .hoja th + th {
+    @apply border-l;
+  }
+  .hoja tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .hoja .fija {
+    @apply sticky left-0 z-10;
   }
 }

@@ -60,7 +60,7 @@ function Espera({
         {([1, 2] as Slot[]).map((slot) => {
           const j = jugadores.find((x) => x.slot === slot);
           return (
-            <li key={slot} className={`rounded-xl border-2 px-4 py-3 ${j ? "border-verde bg-verde/10" : "border-dashed border-borde text-tinta-suave"}`}>
+            <li key={slot} className={`rounded-xl border px-4 py-3 ${j ? "border-verde/40 bg-verde/8" : "border-dashed border-borde text-tinta-suave"}`}>
               {j ? <b>{j.nombre}</b> : "Esperando rival…"}
             </li>
           );

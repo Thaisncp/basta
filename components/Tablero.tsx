@@ -2,28 +2,32 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIAS, EXIGIR_TODO_LLENO, MAX_CARACTERES } from "@/lib/config";
-import { empiezaCon } from "@/lib/puntaje";
-import type { Partida, Respuesta } from "@/lib/tipos";
+import { buscarRespuesta, detalleRonda, empiezaCon } from "@/lib/puntaje";
+import type { Partida, Respuesta, Slot } from "@/lib/tipos";
+import Puntos from "./Puntos";
 
-/** Ronda en juego: cada uno llena sus categorías sin ver las del otro. */
+/** Ronda en juego, en formato de hoja: una fila por ronda, la actual se escribe aquí. */
 export default function Tablero({
   partida,
-  inicial,
-  rival,
+  respuestas,
+  miSlot,
   nombreRival,
   onCambio,
   onGuardar,
   onParar,
 }: {
   partida: Partida;
-  inicial: Record<string, string>;
-  rival: Respuesta | undefined;
+  respuestas: Respuesta[];
+  miSlot: Slot;
   nombreRival: string;
   onCambio: (valores: Record<string, string>) => void;
   onGuardar: () => void;
   onParar: () => void;
 }) {
-  const [valores, setValores] = useState<Record<string, string>>(inicial);
+  const rivalSlot: Slot = miSlot === 1 ? 2 : 1;
+  const [valores, setValores] = useState<Record<string, string>>(
+    () => buscarRespuesta(respuestas, partida.ronda, miSlot)?.valores ?? {},
+  );
   const [parando, setParando] = useState(false);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
   const letra = partida.letra;
@@ -44,60 +48,112 @@ export default function Tablero({
   }
 
   const llenas = CATEGORIAS.filter(({ id }) => empiezaCon(valores[id], letra)).length;
+  const rival = buscarRespuesta(respuestas, partida.ronda, rivalSlot);
   const llenasRival = CATEGORIAS.filter(({ id }) => (rival?.valores?.[id] ?? "").trim()).length;
   const puedeParar = !EXIGIR_TODO_LLENO || llenas === CATEGORIAS.length;
 
+  const anteriores = Array.from({ length: partida.ronda - 1 }, (_, i) => i + 1);
+  let acumulado = 0;
+
   return (
-    <section className="space-y-5">
-      <div className="tarjeta flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm uppercase tracking-widest text-tinta-suave">Ronda {partida.ronda}</p>
-          <p className="text-tinta-suave">
-            {nombreRival}: <b className="text-tinta">{llenasRival}/{CATEGORIAS.length}</b> llenas
-          </p>
-        </div>
-        <div className="grid size-24 shrink-0 place-items-center rounded-2xl bg-rojo text-6xl font-black text-white shadow-lg" aria-label={`Letra ${letra}`}>
+    <section className="space-y-4">
+      {/* Barra de la ronda */}
+      <div className="tarjeta flex flex-wrap items-center gap-4 p-4!">
+        <div className="grid size-16 shrink-0 place-items-center rounded-xl bg-primario text-4xl font-black text-white" aria-label={`Letra ${letra}`}>
           {letra}
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-bold">Ronda {partida.ronda}</p>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-tinta-suave">
+            <span>Tú: <b className="text-tinta tabular-nums">{llenas}/{CATEGORIAS.length}</b></span>
+            <span>{nombreRival}: <b className="text-tinta tabular-nums">{llenasRival}/{CATEGORIAS.length}</b></span>
+          </div>
+        </div>
+        <button
+          disabled={!puedeParar || parando}
+          onClick={() => { setParando(true); onParar(); }}
+          className="boton-alto w-full text-lg sm:w-auto"
+          title={puedeParar ? "" : `Llena las ${CATEGORIAS.length} categorías con la ${letra}`}
+        >
+          🛑 ¡Párame la mano!
+        </button>
       </div>
 
-      <form
-        className="tarjeta grid gap-4 sm:grid-cols-2"
-        onSubmit={(e) => e.preventDefault()}
-        autoComplete="off"
-      >
-        {CATEGORIAS.map(({ id, nombre }) => {
-          const v = valores[id] ?? "";
-          const mal = v.trim() !== "" && !empiezaCon(v, letra);
-          return (
-            <label key={id} className="block space-y-1">
-              <span className="text-sm font-semibold">{nombre}</span>
-              <input
-                value={v}
-                maxLength={MAX_CARACTERES}
-                onChange={(e) => cambiar(id, e.target.value)}
-                placeholder={`${letra}…`}
-                autoCapitalize="words"
-                autoCorrect="off"
-                spellCheck={false}
-                className={`campo w-full ${mal ? "border-rojo! bg-rojo/5" : ""}`}
-              />
-              {mal && <span className="text-xs text-rojo">Debe empezar con {letra}</span>}
-            </label>
-          );
-        })}
-      </form>
+      {/* Hoja */}
+      <div className="hoja">
+        <table className="min-w-[960px]">
+          <thead>
+            <tr>
+              <th className="fija w-14 text-center!">Letra</th>
+              {CATEGORIAS.map((c) => <th key={c.id}>{c.nombre}</th>)}
+              <th className="w-20 text-right!">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {anteriores.map((ronda) => {
+              const l = partida.letras[ronda - 1] ?? null;
+              const res = detalleRonda(
+                buscarRespuesta(respuestas, ronda, miSlot),
+                buscarRespuesta(respuestas, ronda, rivalSlot),
+                l,
+              );
+              acumulado += res.total;
+              return (
+                <tr key={ronda} className="text-tinta-suave">
+                  <td className="fija bg-superficie text-center font-bold text-tinta">{l}</td>
+                  {res.detalle.map((d) => (
+                    <td key={d.categoria}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate">{d.valor || "—"}</span>
+                        <Puntos valor={d.puntos} />
+                      </div>
+                    </td>
+                  ))}
+                  <td className="text-right font-semibold text-tinta tabular-nums">{acumulado}</td>
+                </tr>
+              );
+            })}
 
-      <button
-        disabled={!puedeParar || parando}
-        onClick={() => { setParando(true); onParar(); }}
-        className="boton-principal w-full py-5 text-xl"
-      >
-        🛑 ¡Párame la mano!
-      </button>
+            {/* Ronda actual */}
+            <tr className="bg-primario-suave">
+              <td className="fija bg-primario-suave text-center align-middle! text-2xl font-black text-primario">{letra}</td>
+              {CATEGORIAS.map(({ id, nombre }, i) => {
+                const v = valores[id] ?? "";
+                const mal = v.trim() !== "" && !empiezaCon(v, letra);
+                const bien = empiezaCon(v, letra);
+                return (
+                  <td key={id} className="p-1.5!">
+                    <input
+                      aria-label={nombre}
+                      autoFocus={i === 0}
+                      value={v}
+                      maxLength={MAX_CARACTERES}
+                      onChange={(e) => cambiar(id, e.target.value)}
+                      placeholder={`${letra}…`}
+                      autoCapitalize="words"
+                      autoCorrect="off"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className={`w-full rounded-md border bg-superficie px-2 py-2 outline-none transition focus:ring-2 ${
+                        mal
+                          ? "border-alto text-alto focus:ring-alto/20"
+                          : bien
+                            ? "border-verde/50 focus:border-primario focus:ring-primario/20"
+                            : "border-borde focus:border-primario focus:ring-primario/20"
+                      }`}
+                    />
+                  </td>
+                );
+              })}
+              <td className="text-right align-middle! font-semibold tabular-nums">{acumulado}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       {!puedeParar && (
         <p className="text-center text-sm text-tinta-suave">
-          Llena las {CATEGORIAS.length} categorías con la letra {letra} para poder parar ({llenas}/{CATEGORIAS.length}).
+          Para parar la mano llena las {CATEGORIAS.length} categorías con la letra <b>{letra}</b>. Lo que esté en rojo no empieza con esa letra.
         </p>
       )}
     </section>

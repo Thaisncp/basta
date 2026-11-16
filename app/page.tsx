@@ -44,7 +44,7 @@ export default function Inicio() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-10">
       <div className="text-center">
-        <h1 className="text-6xl font-black tracking-tight text-rojo">¡Basta!</h1>
+        <h1 className="text-6xl font-black tracking-tight text-primario">¡Basta!</h1>
         <p className="mt-2 text-tinta-suave">Párame la mano · 2 jugadores en línea</p>
         <p className="mt-3 text-sm text-tinta-suave">{CATEGORIAS.map((c) => c.nombre).join(" · ")}</p>
       </div>
@@ -64,7 +64,7 @@ export default function Inicio() {
         <button disabled={!nombre.trim() || creando || !supabaseConfigurado} className="boton-principal w-full">
           {creando ? "Creando…" : "Crear partida"}
         </button>
-        {error && <p className="text-sm text-rojo">{error}</p>}
+        {error && <p className="text-sm text-primario">{error}</p>}
       </form>
 
       <form onSubmit={unirse} className="tarjeta space-y-4">

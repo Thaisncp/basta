@@ -5,7 +5,6 @@ import Link from "next/link";
 import { supabase, supabaseConfigurado } from "@/lib/supabase";
 import * as acciones from "@/lib/acciones";
 import { guardarNombre, guardarSlot, leerNombre, leerSlot } from "@/lib/local";
-import { buscarRespuesta } from "@/lib/puntaje";
 import type { Jugador, Partida, Respuesta, Slot } from "@/lib/tipos";
 import Espera from "./Espera";
 import Tablero from "./Tablero";
@@ -200,8 +199,8 @@ export default function Sala({ codigo }: { codigo: string }) {
       <Tablero
         key={partida.ronda}
         partida={partida}
-        inicial={buscarRespuesta(respuestas, partida.ronda, yo.slot)?.valores ?? {}}
-        rival={buscarRespuesta(respuestas, partida.ronda, rivalSlot)}
+        respuestas={respuestas}
+        miSlot={yo.slot}
         nombreRival={rival?.nombre ?? "Rival"}
         onCambio={(valores) => { borrador.current = { ronda: partida.ronda, valores }; }}
         onGuardar={guardarBorrador}
@@ -226,23 +225,30 @@ export default function Sala({ codigo }: { codigo: string }) {
     contenido = <Final partida={partida} respuestas={respuestas} miSlot={yo.slot} nombres={nombres} />;
   }
 
+  // Las pantallas con tabla usan todo el ancho; las de entrada, una columna centrada.
+  const ancho = yo && partida.estado !== "esperando" ? "max-w-6xl" : "max-w-xl";
+
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-      <header className="mb-6 flex items-center justify-between gap-3">
-        <Link href="/" className="text-2xl font-black tracking-tight text-rojo">¡Basta!</Link>
-        <div className="text-right text-sm text-tinta-suave">
-          Sala <span className="font-mono font-bold text-tinta">{codigo}</span>
-          {yo && <div>Juegas como <b className="text-tinta">{yo.nombre}</b></div>}
+    <>
+      <header className="border-b border-borde bg-superficie">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <Link href="/" className="text-xl font-black tracking-tight text-primario">¡Basta!</Link>
+          <div className="flex items-center gap-3 text-sm text-tinta-suave">
+            {yo && <span className="hidden sm:inline">Juegas como <b className="text-tinta">{yo.nombre}</b></span>}
+            <span className="rounded-lg bg-cabecera px-2.5 py-1 font-mono font-bold tracking-widest text-tinta">{codigo}</span>
+          </div>
         </div>
       </header>
-      {aviso && (
-        <div className="mb-4 flex items-start justify-between gap-3 rounded-xl bg-rojo/10 px-4 py-3 text-sm text-rojo">
-          <span>{aviso}</span>
-          <button onClick={() => setAviso(null)} aria-label="Cerrar aviso" className="font-bold">✕</button>
-        </div>
-      )}
-      {contenido}
-    </main>
+      <main className={`mx-auto w-full ${ancho} flex-1 px-4 py-6`}>
+        {aviso && (
+          <div className="mb-4 flex items-start justify-between gap-3 rounded-xl bg-alto/10 px-4 py-3 text-sm text-alto">
+            <span>{aviso}</span>
+            <button onClick={() => setAviso(null)} aria-label="Cerrar aviso" className="font-bold">✕</button>
+          </div>
+        )}
+        {contenido}
+      </main>
+    </>
   );
 }
 
